@@ -1,5 +1,11 @@
 """
 Game can be accessed here: https://codeinplace.stanford.edu/cip3/share/PyFgjbfptw3kODVIpD2I
+
+This code and game can still be improved by:
+- changing the delay time every time the "snake" eats the goal to make the snake go faster
+- lengthening the size of the player to mimic a snake
+- add high scores at the end of the game
+- add obstacles
 """
 
 from graphics import Canvas
