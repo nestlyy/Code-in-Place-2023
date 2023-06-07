@@ -1,3 +1,7 @@
+"""
+Game can be accessed here: https://codeinplace.stanford.edu/cip3/share/PyFgjbfptw3kODVIpD2I
+"""
+
 from graphics import Canvas
 import time
 import random
