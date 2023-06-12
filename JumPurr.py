@@ -1,0 +1,141 @@
+from graphics import Canvas
+import time
+import random
+
+"""
+JumPurr
+Hello! I made this final project for Code in Place 2023! 
+This game was inspired by my cats and Google Chrome's offline Dino Game.
+(Sometimes browser is slow and the cat image "disappears". Suggested browser: Chrome)
+Link to the game: https://codeinplace.stanford.edu/cip3/share/rtsQ0EMyZnzCxHHd1sBs
+
+Click Run to play!
+
+"""
+
+CANVAS_WIDTH = 500
+CANVAS_HEIGHT = 200
+CAT_SIZE = 50
+OBSTACLE_WIDTH = 28
+OBSTACLE_HEIGHT = 40
+GRASS_WIDTH = 10
+VELOCITY = 12 # can be increased to speed up game 
+CAT_VELOCITY = 10 
+DELAY = 0.1    # lower = faster 
+
+def main():
+    #create canvas + sky + static grassland
+    canvas = Canvas(CANVAS_WIDTH, CANVAS_HEIGHT)
+    sky_bg = canvas.create_rectangle(CANVAS_WIDTH, CANVAS_HEIGHT, 0, 0, 'lightblue')
+    grass = canvas.create_rectangle(0, CANVAS_HEIGHT-GRASS_WIDTH, CANVAS_WIDTH, CANVAS_HEIGHT, 'green')
+
+    # New game card
+    intro_card = canvas.create_rectangle(70, 150, 430, 30, 'white', outline ='black')
+    intro_text = canvas.create_text(CANVAS_WIDTH/2, CANVAS_HEIGHT/3, font = 'Helvetica bold', font_size=40, text='JumPurr!', anchor='center', color='Salmon')
+    intro_subtext1 = canvas.create_text(CANVAS_WIDTH/2, CANVAS_HEIGHT/2, font = 'Helvetica', font_size=15, text='Help Jumpurr the cat to jump over obstacles!', anchor='center')
+    intro_subtext2 = canvas.create_text(CANVAS_WIDTH/2, CANVAS_HEIGHT/1.7, font = 'Helvetica italic', font_size=12, text='Click anywhere to start. Press space or click anywhere to jump', anchor='center', color='Green')
+    
+    # Score card
+    score_text = canvas.create_text(5, 0, font = 'Arial bold', font_size=15, text='SCORE:', color='black')
+    score_number = canvas.create_text(70, 0, font = 'Arial bold', font_size=15, text='0', color='black')
+    new_score = 0
+    
+    #Create Jumpurr
+    start_x_cat = 10
+    start_y_cat = CANVAS_HEIGHT-CAT_SIZE
+    end_x_cat = CAT_SIZE
+    end_y_cat = CAT_SIZE
+    cat_jumper = canvas.create_image_with_size(start_x_cat, start_y_cat, end_x_cat, end_y_cat, 'cat.png')
+    top_y_cat = canvas.get_top_y(cat_jumper)
+    get_down = False
+    jump_up = False
+    
+    #Create obstacle
+    obstacles = []
+    start_x_obs = CANVAS_WIDTH - OBSTACLE_WIDTH
+    start_y_obs = CANVAS_HEIGHT - OBSTACLE_HEIGHT
+    end_x_obs = CANVAS_WIDTH
+    end_y_obs = CANVAS_HEIGHT
+    obstacles.append(canvas.create_rectangle(start_x_obs, start_y_obs, end_x_obs, end_y_obs, 'salmon', outline='black'))
+
+    # Actual gameplay
+    canvas.wait_for_click()
+    start_game = canvas.get_new_mouse_clicks()
+    if start_game != None:
+        is_hidden = True
+        hide_intro_card(canvas, intro_card, intro_text, intro_subtext1, intro_subtext2, is_hidden)
+   
+    while True:
+        #obstacle movement
+        start_x_obs -= VELOCITY
+        
+        leading_obstacle = obstacles[0]
+        overlap = canvas.find_overlapping(17, 150, 40, 190) #see if player & obstacle overlap
+        
+        # if leading obstacle is out of view, remove it, then add 1 to score
+        if (canvas.get_left_x(leading_obstacle) + canvas.get_object_width(leading_obstacle) <= 0):
+            obstacles.pop(0)
+            new_score += 1
+            canvas.change_text(score_number, str(new_score))
+            
+        # if JumPurr hits/overlaps with leading obstacle, stop game and show game over card
+        if len(overlap) == 2:
+            game_over(canvas, intro_card, intro_text, intro_subtext1, intro_subtext2, is_hidden)
+            break
+
+        # if last obstacle is a distance of 50, spawn a new one
+        trailing_obstacle = obstacles[-1]
+        if (canvas.get_left_x(trailing_obstacle) + canvas.get_object_width(trailing_obstacle) <= CANVAS_WIDTH - random_gap_len()):
+            obstacles.append(canvas.create_rectangle(CANVAS_WIDTH, start_y_obs, CANVAS_WIDTH+20, end_y_obs, random_color(), outline='black'))
+
+        for obs in obstacles:
+           canvas.moveto(obs, canvas.get_left_x(obs) - VELOCITY, start_y_obs)
+        
+        #cat jump
+        if jump_up is False and get_down is False:
+            key = canvas.get_new_key_presses() 
+            mouse_click = canvas.get_new_mouse_clicks()
+            if str(key) == ' ' or len(mouse_click) == 1:
+                jump_up = True
+        if jump_up == True:
+            if top_y_cat <= (130-CAT_SIZE):
+                jump_up = False
+                get_down = True
+            else:
+                top_y_cat -= CAT_VELOCITY
+        if get_down == True:
+            if top_y_cat >= (start_y_cat):
+                get_down = False
+            else:
+                top_y_cat += CAT_VELOCITY
+        canvas.moveto(cat_jumper, 10, top_y_cat)
+        time.sleep(DELAY)
+
+#random gap length generator
+def random_gap_len():
+    return random.randint(250,700)
+    
+#random color generator
+def random_color():
+    colors = ['blue', 'purple', 'salmon', 'cyan', 'brown', 'red', 'pink']
+    return random.choice(colors)
+
+def game_over(canvas, intro_card, intro_text, intro_subtext1, intro_subtext2, is_hidden):
+    is_hidden = False
+    hide_intro_card(canvas, intro_card, intro_text, intro_subtext1, intro_subtext2, is_hidden)
+    
+# hide/unhide the intro and gameover text
+def hide_intro_card(canvas, intro_card, intro_text, intro_subtext1, intro_subtext2, is_hidden):
+    canvas.set_hidden(intro_card, is_hidden)
+    canvas.set_hidden(intro_text, is_hidden)
+    canvas.set_hidden(intro_subtext1, is_hidden)
+    canvas.set_hidden(intro_subtext2, is_hidden)
+    if is_hidden == False:
+        canvas.change_text(intro_text, 'GAME OVER!')
+        canvas.change_text(intro_subtext1, 'Click Run to restart')
+        canvas.delete(intro_subtext2)
+
+
+
+if __name__ == '__main__':
+    main()
